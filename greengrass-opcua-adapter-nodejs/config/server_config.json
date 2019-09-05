@@ -1,14 +1,56 @@
 [
  {
-   "server_id":"01",
-   "port": 12345
+    "EndpointName": "UNO-2484G",
+    "EndpointUrl": "opc.tcp://localhost:26543",
+    "OpcNodes": [
+      {
+        "nodeId": "ns=1;s=Temperature",
+        "name": "M140001"
+      },
+      {
+        "nodeId": "ns=1;s=FanSpeed",
+        "name": "M140002"
+      },
+      {
+        "nodeId": "ns=1;s=PumpSpeed",
+        "name": "M140003"
+      }
+    ]
  },
  {
-   "server_id":"02",
-   "port": 23456
+    "EndpointName": "UNO-1372G",
+    "EndpointUrl": "opc.tcp://localhost:23456",
+    "OpcNodes": [
+      {
+        "nodeId": "ns=1;s=TemperatureAnalogItem",
+        "name": "StartAddress"
+      },
+      {
+        "nodeId": "ns=1;s=Pressure",
+        "name": "SizeInBytes"
+      },
+      {
+        "nodeId": "ns=1;s=SomeDate",
+        "name": "00000000"
+      }
+    ]
  },
  {
-   "server_id":"03",
-   "port": 26543
+    "EndpointName": "UNO-2333G",
+    "EndpointUrl": "opc.tcp://localhost:11111/",
+    "OpcNodes": [
+      {
+        "nodeId": "ns=1;s=FanSpeed",
+        "name": "StartAddress"
+      },
+      {
+        "nodeId": "ns=1;s=PumpSpeed",
+        "name": "SizeInBytes"
+      },
+      {
+        "nodeId": "ns=1;s=SomeDate",
+        "name": "00000000"
+      }
+    ]
  }
 ]

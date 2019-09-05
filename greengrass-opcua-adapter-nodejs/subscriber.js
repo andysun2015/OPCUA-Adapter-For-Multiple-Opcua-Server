@@ -35,6 +35,19 @@ class OPCUASubscriber {
         }); 
     }   
 
+    disconnect() {
+        const self = this;
+
+        self._client.disconnect(function (err) {
+            if (err) {
+                console.log("OPCUAClient#withClientSession: client disconnect failed ?");
+                console.log('Got an error disconnecting from ', self._serverConfig.url, ' Err: ', err);
+            } else {
+                self.emit('disconnect');
+            }
+        });
+    }   
+
 
     createSession() {
         const userIdentity = null;
@@ -121,6 +134,13 @@ class OPCUASubscriber {
                 console.log(monitoredItem.itemToMonitor.nodeId.toString(), ' ERROR', errorMessage);
             });
         });
+    }
+    getServerConfig() {
+        return this._serverConfig;
+    }
+
+    getNodeConfig() {
+        return this._monitoredItemsConfig;
     }
 }
 

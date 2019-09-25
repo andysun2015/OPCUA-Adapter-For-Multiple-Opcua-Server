@@ -167,7 +167,7 @@ function check_file_loop(callback)
                 ServerConfigSet.LastModifiedtime = mtime;
                 callback();
             }
-            timeout = clientConfig.checkServerConfigInterval;
+            timeout = clientOptions.checkServerConfigInterval;
             check_file_loop(callback);
         }, timeout);
 }

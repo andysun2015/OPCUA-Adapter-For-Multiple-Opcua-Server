@@ -3,12 +3,12 @@
 require('requirish')._(module);
 const Subscriber = require('subscriber');
 const opcua = require('node-opcua');
-const IotData = require('aws-greengrass-core-sdk').IotData;
+//const IotData = require('aws-greengrass-core-sdk').IotData;
 
-const device = new IotData();
+//const device = new IotData();
 
 Subscriber.setOPCUA(opcua);
-Subscriber.setIoTDevice(device);
+//Subscriber.setIoTDevice(device);
 
 const OPCUASubscriber = Subscriber.OPCUASubscriber;
 

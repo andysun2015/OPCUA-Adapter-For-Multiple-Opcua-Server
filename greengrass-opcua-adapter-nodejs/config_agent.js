@@ -1,12 +1,18 @@
 'use strict';
 
 require('requirish')._(module);
+//requiring path and fs modules
+const path = require('path');
 const fs = require('fs');
 var jsonFile = require('jsonfile');
-var ServerConfigfileName = 'server_config.json';
+var ServerConfigfileName = 'publishednodes.json';
 var ClientConfigfileName = 'client_config.json';
+var CertConfigName = 'cert_config.json';
+var SystemStatus = 'system_status.txt';
 var folder = 'config';
 //var folder = '/etc/greengrass/opcua-adapter/config';
+
+
 var ServerConfigSet = {
     LastModifiedtime:"",
     configSet:[]
@@ -27,6 +33,10 @@ var clientOptions = {
         maxDelay: 10 * 1000,
     },
     checkServerConfigInterval: 1000
+};
+
+var certConfig = {
+    certPath:""
 };
 
 function isEmptyOrWhitespace(value)
@@ -54,6 +64,13 @@ function isServerNameValid(value)
 
     return true;
 }
+
+/**
+ * @function config_init
+ * @param serverConfig - opcua server configuration.
+ * @param clientConfig - opcua client configuration.
+ * @param callback - callback function from user.
+ */
 
 function config_init(serverConfig, clientConfig, callback)
 {
@@ -100,6 +117,19 @@ function config_init(serverConfig, clientConfig, callback)
         }
     });
 
+    jsonFile.readFile(folder+'/'+CertConfigName, function(err, jsonData) {
+        if (err) throw err;
+
+        if (isEmptyOrWhitespace(jsonData[0].CertPath)) {
+            console.log("jsonData[i].CertPath is empty or whitespace");
+            return false;
+        }
+
+        certConfig.CertPath = jsonData[0].CertPath;
+        console.log("jsonData[0].CertPath: " + jsonData[0].CertPath);
+
+    });
+
     jsonFile.readFile(folder+'/'+ServerConfigfileName, function(err, jsonData) {
         if (err) throw err;
         var stats = fs.statSync(folder+'/'+ServerConfigfileName);
@@ -133,8 +163,8 @@ function config_init(serverConfig, clientConfig, callback)
             console.log("EndpointUrl: " + jsonData[i].EndpointUrl);
             for (var j = 0; j < jsonData[i].OpcNodes.length; j++ ) {
                 configSet.subscriptions.push(jsonData[i].OpcNodes[j]);
-                console.log("configSet.subscriptions.nodeid: " + configSet.subscriptions[j].nodeId);
-                console.log("configSet.subscriptions.name: " + configSet.subscriptions[j].name);
+                console.log("configSet.subscriptions.Id: " + configSet.subscriptions[j].Id);
+                console.log("configSet.subscriptions.DisplayName: " + configSet.subscriptions[j].DisplayName);
             }
             console.log("configSet.subscriptions node length:" + configSet.subscriptions.length);
             configSet.server.url = jsonData[i].EndpointUrl;
@@ -153,16 +183,53 @@ function datesEqual(a, b) {
     return !(a > b || b > a);
 }
 
+function reportSystemStatus()
+{
+    // overwrite system time to update system status
+    let date_ob = new Date();
+    let seconds = date_ob.getSeconds();
+    fs.writeFile(folder+'/'+SystemStatus, seconds, function(error) {
+        if (error) {
+            console.log("err msg:" + error);
+        } else {
+            console.log("file write success")
+        }
+    })
+}
+
+var compareWithTrustCert = function (a)
+{
+    // read file in the same folder
+    const directoryPath = path.join(__dirname, certConfig.CertPath);
+    var files = fs.readdirSync(directoryPath);
+    var result = false;
+    //listing all files using forEach
+    files.forEach(function (file) {
+        var contents = fs.readFileSync(directoryPath+'/'+file);
+        if (contents.toString("base64").length == a.length) {
+            if (contents.toString("base64").localeCompare(a) === 0) {
+                result =  true;
+            }
+        }
+    });
+    return result;
+}
+
 function check_file_loop(callback)
 {
     var obj = setInterval(()=>{
             clearInterval(obj);
             var server_file_change = false;
-            //check server file config file
+
+            // check server file config file
             var stats = fs.statSync(folder+'/'+ServerConfigfileName);
             var mtime = stats.mtime;
             console.log(mtime);
-            //File modified due to different date
+
+            //update process running status
+            reportSystemStatus();
+
+            // File modified due to different date
             if (!datesEqual(mtime, ServerConfigSet.LastModifiedtime)) {
                 ServerConfigSet.LastModifiedtime = mtime;
                 callback();
@@ -177,4 +244,5 @@ module.exports.ServerConfigSet = ServerConfigSet;
 module.exports.ReConfigServerSert = ReConfigServerSert;
 module.exports.clientOptions = clientOptions;
 module.exports.check_file_loop = check_file_loop;
+module.exports.compareWithTrustCert = compareWithTrustCert;
 

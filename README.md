@@ -74,7 +74,7 @@ You could setup many OPC\-UA servers concurrently.
 
 ## Use Greengrass OPC\-UA to Interact with your OPC\-UA Server<a name="opcua-interact"></a>
 
-1. Prepare your Lambda function
+1. Prepare your Lambda function and relocate the config foler.
 
    Get the code for an OPC\-UA adapter Lambda function from GitHub: 
 
@@ -82,6 +82,12 @@ You could setup many OPC\-UA servers concurrently.
    git clone https://github.com/andysun2015/OPCUA-Adapter-For-Multiple-Opcua-Server.git
    ```
 
+   Relocate the folder greengrass-opcua-adapter-nodejs/config to `/etc/greengrass/opcua-adapter/config` just defined in config_agent.js.
+
+   **Note:**
+   + The relocated path must also defined in Lambda configuration in IoT Core console, or the Lambda function wouldn't find the path or have no access right to this path\!
+   + There's a future work here which would make this path adjustable\!
+   
 2. Configure the server and monitored nodes
 
    Modify the field `EndpointUrl` in the file `publishednodes.json` in config folder which contain the server IP and Port that you want to connect to, as well as the node Ids you would like to monitor\. Here's the example:
@@ -124,6 +130,24 @@ You could setup many OPC\-UA servers concurrently.
     ```
     Once there's no any certificate matched in the `CertPath`, then the OPC\-UA client wouldn't go on the communication with the OPC\-UA server.
 
+4. Configure json file polling time of Lambda.
+    MOdify the field `checkServerConfigInterval` in client_config.json to adjust the polling interval in mini second of Lambda reading json file.
+
+    ```json
+    [
+     {
+        "keepSessionAlive": "true",
+        "connectionStrategy": {
+        "maxRetry":100000,
+        "initialDelay":2000,
+        "maxDelay":10000
+        },
+        "checkServerConfigInterval":1000
+     }
+    ]
+    ```
+
+    In this case of "checkServerConfigInterval":1000, Lambda function will poll json file once 1 second.
 5. Upload your Lambda
 
    Create a Greengrass Lambda function\. You can find more details on how to do that in [Configure the Lambda Function for AWS IoT Greengrass](https://docs.aws.amazon.com/greengrass/latest/developerguide/config-lambda.htmlconfig-lambda.md)\. In a nutshell, create a Lambda function code archive by doing the following:

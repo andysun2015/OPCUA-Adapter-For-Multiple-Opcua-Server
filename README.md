@@ -131,9 +131,6 @@ You could setup many OPC\-UA servers concurrently.
    ```console
    # Archive the whole directory as a zip file
    zip -r opcuaLambda.zip * -x \*.git\*
-
-   # Create an AWS Lambda with the created zip
-   aws lambda create-function --function-name <Function_Name> --runtime 'nodejs8.10' --role <Your_Role> --handler 'index.handler' --zip-file opcuaLambda.zip
    ```
 
    Add this Lambda to your Greengrass Group\. Details are, again, in: [Configure the Lambda Function for AWS IoT Greengrass](https://docs.aws.amazon.com/greengrass/latest/developerguide/config-lambda.html)\.

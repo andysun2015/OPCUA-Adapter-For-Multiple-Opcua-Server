@@ -9,8 +9,7 @@ var ServerConfigfileName = 'publishednodes.json';
 var ClientConfigfileName = 'client_config.json';
 var CertConfigName = 'cert_config.json';
 var SystemStatus = 'system_status.txt';
-var folder = 'config';
-//var folder = '/etc/greengrass/opcua-adapter/config';
+var folder = '/etc/greengrass/opcua-adapter/config';
 
 
 var ServerConfigSet = {
@@ -67,6 +66,7 @@ function isServerNameValid(value)
 
 /**
  * @function config_init
+ * @description This function is used to load regarding json files to configuration variable.
  * @param serverConfig - opcua server configuration.
  * @param clientConfig - opcua client configuration.
  * @param callback - callback function from user.

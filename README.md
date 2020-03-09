@@ -76,13 +76,18 @@ You could setup many OPC\-UA servers concurrently.
 
 1. Prepare your Lambda function and relocate the config foler.
 
-   Get the code for an OPC\-UA adapter Lambda function from GitHub: 
+   + Get the code for an OPC\-UA adapter Lambda function from GitHub: 
 
-   ``` nodejs
-   git clone https://github.com/andysun2015/OPCUA-Adapter-For-Multiple-Opcua-Server.git
-   ```
-
-   Relocate the folder greengrass-opcua-adapter-nodejs/config to `/etc/greengrass/opcua-adapter/config` just defined in config_agent.js.
+        ``` nodejs
+        git clone https://github.com/andysun2015/OPCUA-Adapter-For-Multiple-Opcua-Server.git
+        cd greengrass-opcua-adapter-nodejs
+        npm install
+        ```
+    + Patch the factories.js
+        ``` nodejs
+        git apply patch/factories.patch
+        ```
+    + Relocate the folder greengrass-opcua-adapter-nodejs/config to `/etc/greengrass/opcua-adapter/config` defined in config_agent.js.
 
    **Note:**
    + The relocated path must also defined in Lambda configuration in IoT Core console, or the Lambda function wouldn't find the path or have no access right to this path\!

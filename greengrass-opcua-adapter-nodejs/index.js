@@ -15,105 +15,124 @@ const OPCUASubscriber = Subscriber.OPCUASubscriber;
 const ConfigAgent = require('./config_agent');
 
 var OPCUASubscriberSet = [];
-var OPCUAClientSet = [];
 
 function dumpServerInfo(obj)
 {
-    obj.configSet.forEach(function(item, index, object) {
-        console.log("item.server.url:" + item.server.url);
-        console.log("item.server.name:" + item.server.name);
-        console.log("item.connection:" + item.connection);
+    obj.forEach(function(item, index, object) {
+        console.log("[%s] item.server.url:" + item.server.url, dumpServerInfo.name);
+        console.log("[%s] item.server.name:" + item.server.name, dumpServerInfo.name);
+        console.log("[%s] item.connection:" + item.connection, dumpServerInfo.name);
     });
 }
 
 function clearArray(obj) {
-  while (obj.length) {
-    obj.pop();
-  }
+    while (obj.length) {
+        obj.pop();
+    }
 }
 
-function connect_server(serverObj,clientObj)
+function connect_server(serverConfigs,clientOptions)
 {
     var i = 0;
-    for (i = 0; i < serverObj.configSet.length; i ++) {
-        if (!serverObj.configSet[i].connection) {
-            var client = new opcua.OPCUAClient(clientObj);
-            var subscriber = new OPCUASubscriber(client, serverObj.configSet[i].server, serverObj.configSet[i].subscriptions);
+    for (i = 0; i < serverConfigs.length; i+=1) {
+        if (!serverConfigs[i].connection) {
+            let client = new opcua.OPCUAClient(clientOptions);
+            let subscriber = new OPCUASubscriber(client, serverConfigs[i].server, serverConfigs[i].subscriptions);
             OPCUASubscriberSet.push(subscriber);
-            OPCUAClientSet.push(client);
             subscriber.connect();
-            serverObj.configSet[i].connection = true;
+            serverConfigs[i].connection = true;
         }
     }
 }
 
+var convertSerConfigToMap = function (arrObj) {
 
-ConfigAgent.config_init(ConfigAgent.ServerConfigSet, ConfigAgent.clientOptions, ()=> {
-    connect_server(ConfigAgent.ServerConfigSet, ConfigAgent.clientOptions);
-    console.log("+++++++++++++++ dump ConfigAgent.ServerConfigSet +++++++++++++++");
-    dumpServerInfo(ConfigAgent.ServerConfigSet);
-    ConfigAgent.check_file_loop(()=>{
-        //disconnect subscriber
-        // 1. disconnect subscribe which not exist or need modification
-        ConfigAgent.config_init(ConfigAgent.ReConfigServerSert, ConfigAgent.clientOptions, ()=>{            
-            if (ConfigAgent.ReConfigServerSert.configSet.length > 0) {
-                for (var k = 0; k < OPCUASubscriberSet.length; k ++) {
-                    var item = OPCUASubscriberSet[k];
-                    var ExistFlag = false;
-                    //check server/url information between subscriber and new config
-                    var server = item.getServerConfig();
-                    var subscription = item.getNodeConfig();
-                    for (var i = 0; i < ConfigAgent.ReConfigServerSert.configSet.length; i ++) {
-                        if (server.name === ConfigAgent.ReConfigServerSert.configSet[i].server.name &&
-                            server.url === ConfigAgent.ReConfigServerSert.configSet[i].server.url) {
-                            //if name and url are identical, check node information
-                            var reconfigSubscription = ConfigAgent.ReConfigServerSert.configSet[i].subscriptions;
-                            if (subscription.length === reconfigSubscription.length &&
-                                subscription.every(function(sub, j) {
-                                    var exist = false;
-                                    reconfigSubscription.forEach( (reconfigSub)=>{
-                                        //compare the content of subscription from new modification and connected.
-                                        if (JSON.stringify(reconfigSub) === JSON.stringify(sub)) {
-                                            exist = true;
-                                            return;
-                                        }
-                                    })
-                                    console.log(j+":exist:" + exist);
-                                    return exist;
-                                })) {
-                                    ConfigAgent.ReConfigServerSert.configSet[i].connection = true;
-                                    ExistFlag =true;
-                                } else {
-                                    //same name, different node
-                                    ConfigAgent.ReConfigServerSert.configSet[i].connection = false;
-                                    ExistFlag = false;
-                                }
-                            //same name, break anyway
-                            break;
-                        } 
-                    }
-                    console.log("ExistFlag:"+ExistFlag);
-                    if (!ExistFlag) {
-                        //disconnect subsrcibe
-                        item.disconnect();
-                        // 2. remove not exist subscribe
-                        OPCUASubscriberSet.splice(k,1);
-                        k -=1;
+    return arrObj.reduce(function(result, current) {
+        var subscriptions = current.subscriptions.reduce(function(map, obj) {
+            map[obj.Id] = obj.DisplayName;
+            return map;
+        }, {});
+        result[current.server.name] = result[current.id_0] || {};
+        result[current.server.name]["url"] = current.server.url;
+        result[current.server.name]["subscription"] = subscriptions;
+        return result;
+    }, {});
+};
+
+
+
+var convertOPCUASubscriberSetToMap = function (arrObj) {
+
+    return arrObj.reduce(function(result, current) {
+        var subscriptions = current.getNodeConfig().reduce(function(map, obj) {
+            map[obj.Id] = obj.DisplayName;
+            return map;
+        }, {});
+        var server = current.getServerConfig();
+        result[server.name] = result[current.id_0] || {};
+        result[server.name]["url"] = server.url;
+        result[server.name]["subscription"] = subscriptions;
+        return result;
+    }, {});
+};
+
+function updateConfig()
+{
+    ConfigAgent.configInit(ConfigAgent.ReServerConfigs, () => {
+        if (ConfigAgent.ReServerConfigs.length > 0) {
+            let reConfigServerMap = convertSerConfigToMap(ConfigAgent.ReServerConfigs);
+            let OPCUASubscriberSetMap = convertOPCUASubscriberSetToMap(OPCUASubscriberSet);
+            // 1. disconnect subscribe which not exist or need modification
+            for (let serverName in OPCUASubscriberSetMap) {
+                let haveSameSub = false;
+                if (serverName in reConfigServerMap &&
+                    OPCUASubscriberSetMap[serverName]["url"] === reConfigServerMap[serverName]["url"]) {
+                    let reConfigServerSubMap = reConfigServerMap[serverName]["subscription"];
+                    let OPCUASubscriberSetSubMap = OPCUASubscriberSetMap[serverName]["subscription"];
+                    haveSameSub = Object.keys(reConfigServerSubMap).length == Object.keys(OPCUASubscriberSetSubMap).length;
+
+                    if (haveSameSub) {
+                        for (let subs in reConfigServerSubMap) {
+                            if (! (subs in OPCUASubscriberSetSubMap)) {
+                                haveSameSub = false;
+                                break;
+                            }
+                        }
                     }
                 }
-                // 3. connect to modified server
-                connect_server(ConfigAgent.ReConfigServerSert, ConfigAgent.clientOptions);
 
-                ConfigAgent.ServerConfigSet = ConfigAgent.ReConfigServerSert;
-                console.log("+++++++++++++++ dump ConfigAgent.ReConfigServerSert +++++++++++++++");
-                dumpServerInfo(ConfigAgent.ReConfigServerSert);
-                clearArray(ConfigAgent.ReConfigServerSert.configSet);
-            } else {
-                console.log("No config from server_config.json");
+                if (!haveSameSub) {
+                    // subscriber disconnect and removed from OPCUASubscriberSet
+                    let index = 0;
+                    for (index = 0; index < OPCUASubscriberSet.length; index += 1) {
+                        if (OPCUASubscriberSet[index].getServerConfig().name ===
+                            serverName) {
+                            OPCUASubscriberSet[index].disconnect();
+                            OPCUASubscriberSet.splice(index, 1);
+                            index -= 1;
+                        }
+                    }
+                } else {
+                    // set connection flag to true to prevent replicate connect in connect_server()
+                    ConfigAgent.ReServerConfigs.find(function(item, index, array) {
+                        if (item.server.name === serverName) {
+                            item.connection = true;
+                            return;
+                        }
+                    });
+                }
             }
-        });
+            // 2. connect to modified server
+            connect_server(ConfigAgent.ReServerConfigs, ConfigAgent.clientOptions);
+            ConfigAgent.ServerConfigs = ConfigAgent.ReServerConfigs;
+            console.log("+++++++++++++++ dump ConfigAgent.ServerConfigs +++++++++++++++");
+            dumpServerInfo(ConfigAgent.ReServerConfigs);
+            ConfigAgent.ReServerConfigs = [];
+        }
     });
-});
+}
+
+ConfigAgent.checkFileLoop(()=> updateConfig());
 
 exports.handler = (event, context) => {
     console.log('Not configured to be called');

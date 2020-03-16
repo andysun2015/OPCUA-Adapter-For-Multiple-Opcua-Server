@@ -1,180 +1,223 @@
 'use strict';
 
 require('requirish')._(module);
+//requiring path and fs modules
+const path = require('path');
 const fs = require('fs');
-var jsonFile = require('jsonfile');
-var ServerConfigfileName = 'server_config.json';
-var ClientConfigfileName = 'client_config.json';
-var folder = 'config';
-//var folder = '/etc/greengrass/opcua-adapter/config';
-var ServerConfigSet = {
-    LastModifiedtime:"",
-    configSet:[]
-};
+const jsonFile = require('jsonfile');
+const serverConfigfileName = 'published_nodes.json';
+const clientConfigfileName = 'client_config.json';
+const certConfigName = 'cert_config.json';
+const systemStatus = 'system_status.txt';
+const folder = '/etc/greengrass/opcua-adapter/config';
 
-var ReConfigServerSert = {
-    LastModifiedtime:"",
-    configSet:[]
-};
 
-var ServerFileLastModifyTime;
+var LastModifiedtime = "";
+
+var ServerConfigs = [];
+
+var ReServerConfigs = [];
 
 var clientOptions = {
     keepSessionAlive: true,
     connectionStrategy: {
         maxRetry: 100000,
         initialDelay: 2000,
-        maxDelay: 10 * 1000,
+        maxDelay: 10 * 1000
     },
     checkServerConfigInterval: 1000
 };
 
-function isEmptyOrWhitespace(value)
-{
-    if (!value) {
-        console.log("input is empty");
-        return true;
-    }
+var certConfig = {
+    certPath: ""
+};
 
-    if (!value.trim()) {
-        console.log("input is whitespace");
-        return true;
-    }
+var timeout = 0;
 
-    return false;
-
+function isEmptyOrWhitespace(value) {
+    return (!value || !value.trim());
 }
 
-function isServerNameValid(value)
-{
-    if (isEmptyOrWhitespace(value)) {
-        console.log("Server is empty or whitespace");
-        return false;
-    }
-
-    return true;
+function isEmpty(value) {
+    return (!value);
 }
 
-function config_init(serverConfig, clientConfig, callback)
-{
-    jsonFile.readFile(folder+'/'+ClientConfigfileName, function(err, jsonData) {
-        if (err) throw err;
-        for (var i = 0; i <jsonData.length; ++i) {
+/**
+ * @function configInit
+ * @description This function is used to load regarding json files to configuration variable.
+ * @param serverConfigs - opcua server configuration.
+ * @param callback - this will be called after finishing loading json configuration,
+ *                   the user can take use of loaded configuration to handle connection.
+ */
 
-            if (isEmptyOrWhitespace(jsonData[i].keepSessionAlive)) {
-                console.log("jsonData[i].keepSessionAlive is empty or whitespace");
-                return false;
+function configInit(serverConfigs, callback) {
+    jsonFile.readFile(`${folder}/${clientConfigfileName}`, function (err, configList) {
+        if (err) {
+            throw err;
+        }
+        for (let i = 0; i < configList.length; i += 1) {
+
+            if (isEmptyOrWhitespace(configList[i].keepSessionAlive)) {
+                throw new Error("configList[%d].keepSessionAlive is empty or whitespace", i);
             }
 
-            if (!Number.isInteger(jsonData[i].connectionStrategy.maxRetry)) {
-                console.log("jsonData[i].connectionStrategy.maxRetry is not a number");
-                return false;
+            if (!Number.isInteger(configList[i].connectionStrategy.maxRetry)) {
+                throw new Error("configList[%d].connectionStrategy.maxRetry is not a number", i);
             }
 
-            if (!Number.isInteger(jsonData[i].connectionStrategy.initialDelay)) {
-                console.log("invalid .connectionStrategy.initialDelay is not a number");
-                return false;
+            if (!Number.isInteger(configList[i].connectionStrategy.initialDelay)) {
+                throw new Error("invalid .connectionStrategy.initialDelay is not a number");
             }
 
-            if (!Number.isInteger(jsonData[i].connectionStrategy.maxDelay)) {
-                console.log("connectionStrategy.maxDelay is not a number");
-                return false;
+            if (!Number.isInteger(configList[i].connectionStrategy.maxDelay)) {
+                throw new Error("connectionStrategy.maxDelay is not a number");
             }
 
-            if (!Number.isInteger(jsonData[i].checkServerConfigInterval)) {
-                console.log("connectionStrategy.maxDelay is not a number");
-                return false;
+            if (!Number.isInteger(configList[i].checkServerConfigInterval)) {
+                throw new Error("connectionStrategy.maxDelay is not a number");
             }
 
-            clientConfig.keepSessionAlive = jsonData[i].keepSessionAlive;
-            clientConfig.connectionStrategy.maxRetry = jsonData[i].connectionStrategy.maxRetry;
-            clientConfig.connectionStrategy.initialDelay = jsonData[i].connectionStrategy.initialDelay;
-            clientConfig.connectionStrategy.maxDelay = jsonData[i].connectionStrategy.maxDelay;
-            clientConfig.checkServerConfigInterval = jsonData[i].checkServerConfigInterval;
+            clientOptions.keepSessionAlive = configList[i].keepSessionAlive;
+            clientOptions.connectionStrategy.maxRetry = configList[i].connectionStrategy.maxRetry;
+            clientOptions.connectionStrategy.initialDelay = configList[i].connectionStrategy.initialDelay;
+            clientOptions.connectionStrategy.maxDelay = configList[i].connectionStrategy.maxDelay;
+            clientOptions.checkServerConfigInterval = configList[i].checkServerConfigInterval;
 
-            console.log("jsonData[i].keepSessionAlive: " + jsonData[i].keepSessionAlive);
-            console.log("jsonData[i].connectionStrategy.maxRetry: " + jsonData[i].connectionStrategy.maxRetry);
-            console.log("jsonData[i].connectionStrategy.initialDelay: " + jsonData[i].connectionStrategy.initialDelay);
-            console.log("jsonData[i].connectionStrategy.maxDelay: " + jsonData[i].connectionStrategy.maxDelay);
-            console.log("jsonData[i].checkServerConfigInterval: " + jsonData[i].checkServerConfigInterval);
+            console.log("[%s] configList[%d].keepSessionAlive: " + configList[i].keepSessionAlive, configInit.name, i);
+            console.log("[%s] configList[%d].connectionStrategy.maxRetry: " + configList[i].connectionStrategy.maxRetry, configInit.name, i);
+            console.log("[%s] configList[%d].connectionStrategy.initialDelay: " + configList[i].connectionStrategy.initialDelay, configInit.name, i);
+            console.log("[%s] configList[%d].connectionStrategy.maxDelay: " + configList[i].connectionStrategy.maxDelay, configInit.name, i);
+            console.log("[%s] configList[%d].checkServerConfigInterval: " + configList[i].checkServerConfigInterval, configInit.name, i);
         }
     });
 
-    jsonFile.readFile(folder+'/'+ServerConfigfileName, function(err, jsonData) {
-        if (err) throw err;
-        var stats = fs.statSync(folder+'/'+ServerConfigfileName);
-        ServerFileLastModifyTime = stats.mtime;
-        for (var i = 0; i <jsonData.length; ++i) {
-            if (!isServerNameValid(jsonData[i].EndpointName)) {
+    jsonFile.readFile(`${folder}/${certConfigName}`, function (err, configList) {
+        if (err) {
+            throw err;
+        }
+
+        if (isEmptyOrWhitespace(configList[0].CertPath)) {
+            throw new Error("configList[0].CertPath is empty or whitespace");
+        }
+
+        certConfig.CertPath = configList[0].CertPath;
+        console.log("[%s] configList[0].CertPath: " + configList[0].CertPath, configInit.name);
+
+    });
+
+    jsonFile.readFile(`${folder}/${serverConfigfileName}`, function (err, configList) {
+        if (err) {
+            throw err;
+        }
+        var stats = fs.statSync(`${folder}/${serverConfigfileName}`);
+        var serverFileLastModifyTime = stats.mtime;
+
+        configList.forEach((config)=> {
+            if (isEmptyOrWhitespace(config.EndpointName)) {
                 console.log("invalid EndpointName");
-                continue;
+                return;
             }
 
-            if (!isServerNameValid(jsonData[i].EndpointUrl)) {
+            if (isEmptyOrWhitespace(config.EndpointUrl)) {
                 console.log("invalid EndpointUrl");
-                continue;
+                return;
             }
 
-            if (jsonData[i].OpcNodes.length <= 0) {
+            if (config.OpcNodes.length <= 0) {
                 console.log("No OpcNodes!");
-                continue;
+                return;
             }
-            var configSet = {
+            var serverConfig = {
                 server: {
                     name: "",
-                    url: "",
+                    url: ""
                 },
-                subscriptions: [
-
-                ],
-                connection:false
+                subscriptions: [],
+                connection: false
             };
-            console.log("EndpointName: " + jsonData[i].EndpointName);
-            console.log("EndpointUrl: " + jsonData[i].EndpointUrl);
-            for (var j = 0; j < jsonData[i].OpcNodes.length; j++ ) {
-                configSet.subscriptions.push(jsonData[i].OpcNodes[j]);
-                console.log("configSet.subscriptions.nodeid: " + configSet.subscriptions[j].nodeId);
-                console.log("configSet.subscriptions.name: " + configSet.subscriptions[j].name);
+            console.log("[%s] EndpointName: " + config.EndpointName, configInit.name);
+            console.log("[%s] EndpointUrl: " + config.EndpointUrl, configInit.name);
+
+            for (let j = 0; j < config.OpcNodes.length; j += 1) {
+                serverConfig.subscriptions.push(config.OpcNodes[j]);
+                console.log("[%s] serverConfig.subscriptions.Id: " + serverConfig.subscriptions[j].Id, configInit.name);
+                console.log("[%s] serverConfig.subscriptions.DisplayName: " + serverConfig.subscriptions[j].DisplayName, configInit.name);
             }
-            console.log("configSet.subscriptions node length:" + configSet.subscriptions.length);
-            configSet.server.url = jsonData[i].EndpointUrl;
-            configSet.server.name = jsonData[i].EndpointName;
-            serverConfig.configSet.push(configSet);
-            serverConfig.LastModifiedtime =ServerFileLastModifyTime;
-        }
+            console.log("[%s] serverConfig.subscriptions node length:" + serverConfig.subscriptions.length, configInit.name);
+            serverConfig.server.url = config.EndpointUrl;
+            serverConfig.server.name = config.EndpointName;
+            serverConfigs.push(serverConfig);
+            LastModifiedtime = serverFileLastModifyTime;
+        });
         callback();
     });
 }
-
-
-var timeout = 2000;
 
 function datesEqual(a, b) {
     return !(a > b || b > a);
 }
 
-function check_file_loop(callback)
-{
-    var obj = setInterval(()=>{
-            clearInterval(obj);
-            var server_file_change = false;
-            //check server file config file
-            var stats = fs.statSync(folder+'/'+ServerConfigfileName);
-            var mtime = stats.mtime;
-            console.log(mtime);
-            //File modified due to different date
-            if (!datesEqual(mtime, ServerConfigSet.LastModifiedtime)) {
-                ServerConfigSet.LastModifiedtime = mtime;
-                callback();
-            }
-            timeout = clientOptions.checkServerConfigInterval;
-            check_file_loop(callback);
-        }, timeout);
+
+/**
+ * @function reportSystemStatus
+ * @description This function is used to report the system status by writing time second into a file.
+ */
+function reportSystemStatus() {
+    // overwrite system time to update system status
+    var dateObject = new Date();
+    var seconds = dateObject.getSeconds();
+    fs.writeFile(`${folder}/${systemStatus}`, seconds, function (error) {
+        if (error) {
+            console.log("Failed to write system time to %s: %s", folder, error);
+        } else {
+            console.log("System time written in %s successfully", folder);
+        }
+    });
 }
 
-module.exports.config_init = config_init;
-module.exports.ServerConfigSet = ServerConfigSet;
-module.exports.ReConfigServerSert = ReConfigServerSert;
+var compareWithTrustCert = function (serverCert) {
+    // read file in the same folder
+    const directoryPath = path.join(__dirname, certConfig.CertPath);
+    var files = fs.readdirSync(directoryPath);
+    var result = false;
+
+    for (let file of files) {
+        let contents = fs.readFileSync(`${directoryPath}/${file}`);
+        if (contents.length === serverCert.length) {
+            if (contents.equals(serverCert)) {
+                 return true;
+            }
+        }
+    }
+};
+
+function checkFileLoop(callback) {
+    var obj = setInterval(()=> {
+        clearInterval(obj);
+
+        // check server file config file
+        var stats = fs.statSync(`${folder}/${serverConfigfileName}`);
+        var mtime = stats.mtime;
+        //update process running status
+        reportSystemStatus();
+
+        // File modified due to different date
+        if (!datesEqual(mtime, LastModifiedtime)) {
+            LastModifiedtime = mtime;
+            callback();
+        }
+
+        if (clientOptions.checkServerConfigInterval > 0) {
+            timeout = clientOptions.checkServerConfigInterval;
+        }
+        checkFileLoop(callback);
+    }, timeout);
+}
+
+module.exports.configInit = configInit;
+module.exports.ServerConfigs = ServerConfigs;
+module.exports.ReServerConfigs = ReServerConfigs;
 module.exports.clientOptions = clientOptions;
-module.exports.check_file_loop = check_file_loop;
+module.exports.checkFileLoop = checkFileLoop;
+module.exports.compareWithTrustCert = compareWithTrustCert;
 

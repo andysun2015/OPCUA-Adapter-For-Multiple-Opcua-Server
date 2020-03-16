@@ -3,6 +3,7 @@
 require('requirish')._(module);
 const util = require('util');
 const EventEmitter = require('events');
+const ConfigAgent = require('./config_agent');
 
 let Opcua;
 let IoTDevice;
@@ -57,8 +58,18 @@ class OPCUASubscriber {
                 self._session = session;
                 console.log('Session created');
                 console.log('SessionId: ', session.sessionId.toString());
-                self.emit('session_create');
-            } else {
+
+                var result = ConfigAgent.compareWithTrustCert(session.serverCertificate);
+                console.log("cert compare result: " + result);
+
+                if (result === false) {
+                    createSessionError = new Error("Server certificate not in our trust list ");
+                } else {
+                    self.emit('session_create');
+                }
+            }
+
+            if (createSessionError) {
                 console.log('Err: ', createSessionError);
             }
         });
@@ -89,10 +100,10 @@ class OPCUASubscriber {
     monitorNodes() {
         const self = this;
         self._monitoredItemsConfig.forEach((monitoredNode) => {
-            console.log('monitoring node id = ', monitoredNode.nodeId);
+            console.log('monitoring node id = ', monitoredNode.Id);
             const monitoredItem = this._subscription.monitor(
                 {
-                    nodeId: monitoredNode.nodeId,
+                    nodeId: monitoredNode.Id,
                     attributeId: Opcua.AttributeIds.Value,
                 },
                 {
@@ -106,7 +117,7 @@ class OPCUASubscriber {
                 console.log('monitoredItem initialized');
             });
             monitoredItem.on('changed', (dataValue) => {
-                const monitoredNodeName = monitoredNode.name;
+                const monitoredNodeName = monitoredNode.DisplayName;
                 const serverName = self._serverConfig.name;
                 const time = dataValue.sourceTimestamp;
                 const nodeId = monitoredItem.itemToMonitor.nodeId.toString();

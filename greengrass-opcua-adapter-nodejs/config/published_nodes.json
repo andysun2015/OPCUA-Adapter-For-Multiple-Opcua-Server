@@ -19,7 +19,7 @@
  },
  {
     "EndpointName": "UNO-1372G",
-    "EndpointUrl": "opc.tcp://localhost:23456",
+    "EndpointUrl": "opc.tcp://localhost:11111",
     "OpcNodes": [
       {
         "Id": "ns=1;s=TemperatureAnalogItem",
@@ -37,7 +37,7 @@
  },
  {
     "EndpointName": "UNO-2333G",
-    "EndpointUrl": "opc.tcp://localhost:11111/",
+    "EndpointUrl": "opc.tcp://localhost:22222/",
     "OpcNodes": [
       {
         "Id": "ns=1;s=FanSpeed",

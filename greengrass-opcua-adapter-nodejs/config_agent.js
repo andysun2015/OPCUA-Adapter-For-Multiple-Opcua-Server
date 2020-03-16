@@ -157,6 +157,7 @@ function datesEqual(a, b) {
     return !(a > b || b > a);
 }
 
+
 /**
  * @function reportSystemStatus
  * @description This function is used to report the system status by writing time second into a file.
@@ -179,6 +180,7 @@ var compareWithTrustCert = function (serverCert) {
     const directoryPath = path.join(__dirname, certConfig.CertPath);
     var files = fs.readdirSync(directoryPath);
     var result = false;
+
     for (let file of files) {
         let contents = fs.readFileSync(`${directoryPath}/${file}`);
         if (contents.length === serverCert.length) {
@@ -187,7 +189,6 @@ var compareWithTrustCert = function (serverCert) {
             }
         }
     }
-    return result;
 };
 
 function checkFileLoop(callback) {

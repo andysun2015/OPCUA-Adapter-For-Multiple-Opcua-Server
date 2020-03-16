@@ -134,7 +134,6 @@ function updateConfig()
 
 ConfigAgent.checkFileLoop(()=> updateConfig());
 
-
 exports.handler = (event, context) => {
     console.log('Not configured to be called');
 };

@@ -70,7 +70,7 @@ You could setup many OPC\-UA servers concurrently.
 ## Make sure your Greengrass Group is ready<a name="opcua-group"></a>
 + Create a Greengrass group \(find more details in [Configure AWS IoT Greengrass on AWS IoT](https://docs.aws.amazon.com/greengrass/latest/developerguide/gg-config.html)\.\) 
 + Set up a Greengrass Core on one of the supported platforms \(Raspberry\-pi for [example](https://docs.aws.amazon.com/greengrass/latest/developerguide/setup-filter.rpi.html)\) 
-+ [Set up](https://docs.aws.amazon.com/greengrass/latest/developerguide/what-is-gg.html#gg-platforms) your Greengrass Core to be able to run nodejs6\.x Lambda functions
++ [Set up](https://github.com/aws/aws-greengrass-core-sdk-js/) your Greengrass Core to be able to run nodejs12\.x Lambda functions.
 
 ## Use Greengrass OPC\-UA to Interact with your OPC\-UA Server<a name="opcua-interact"></a>
 
@@ -78,24 +78,32 @@ You could setup many OPC\-UA servers concurrently.
 
    + Get the code for an OPC\-UA adapter Lambda function from GitHub: 
 
-        ``` nodejs
-        git clone https://github.com/andysun2015/OPCUA-Adapter-For-Multiple-Opcua-Server.git
-        cd greengrass-opcua-adapter-nodejs
-        npm install
-        ```
-    + Patch the factories.js
-        ``` nodejs
-        git apply patch/factories.patch
-        ```
-    + Relocate the folder greengrass-opcua-adapter-nodejs/config to `/etc/greengrass/opcua-adapter/config` defined in config_agent.js.
+      ``` nodejs
+      git clone https://github.com/andysun2015/OPCUA-Adapter-For-Multiple-Opcua-Server.git
+      cd greengrass-opcua-adapter-nodejs
+      npm install
+      ```
+   + Patch the factories.js
+      ``` nodejs
+      git apply patch/factories.patch
+      ```
+   + Relocate the folder `greengrass-opcua-adapter-nodejs/config` to `/etc/greengrass/opcua-adapter/config` defined in config_agent.js.
+   + Download [AWS IoT Greengrass Core SDK Software For Nodejs](https://github.com/aws/aws-greengrass-core-sdk-js/)\. and copy aws-greengrass-core-sdk folder into node_modules folder.
+
+      ```console
+      # copy aws-greengrass-core-sdk to node_modules
+      git clone https://github.com/aws/aws-greengrass-core-sdk-js.git
+      cd aws-greengrass-core-sdk-js/
+      cp -fr aws-greengrass-core-sdk OPCUA-Adapter-For-Multiple-Opcua-Server/greengrass-opcua-adapter-nodejs/node_modules/
+      ```
 
    **Note:**
    + The relocated path must also defined in Lambda configuration in IoT Core console, or the Lambda function wouldn't find the path or have no access right to this path\!
    + There's a future work here which would make this path adjustable\!
-   
+
 2. Configure the server and monitored nodes
 
-   Modify the field `EndpointUrl` in the file `publishednodes.json` in config folder which contain the server IP and Port that you want to connect to, as well as the node Ids you would like to monitor\. Here's the example:
+   Modify the field `EndpointUrl` in the file `published_nodes.json` in config folder which contain the server IP and Port that you want to connect to, as well as the node Ids you would like to monitor\. Here's the example:
 
    ```json
     [
@@ -120,7 +128,7 @@ You could setup many OPC\-UA servers concurrently.
     ]
    ```
 
-   In this case, we are connecting to an OPC\-UA server running on the same host as our Greengrass Core, on port 26543, and monitoring multiple nodes that has an OPC\-UA Id `'ns=1;s=Temperature'`, `'ns=1;s=FanSpeed'`, and `'ns=1;s=PumpSpeed'`\. 
+   In this case, we are connecting to an OPC\-UA server running on the same host as our Greengrass Core, on port 26543, and monitoring multiple nodes that has an OPC\-UA Id `'ns=1;s=Temperature'`, `'ns=1;s=FanSpeed'`, and `'ns=1;s=PumpSpeed'`\.
 
 3. Configure to authenticate trusted server
 

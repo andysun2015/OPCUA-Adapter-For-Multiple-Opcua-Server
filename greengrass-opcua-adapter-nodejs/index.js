@@ -76,8 +76,23 @@ var convertOPCUASubscriberSetToMap = function (arrObj) {
     }, {});
 };
 
+function updateOPCUASubscriberSetStatus()
+{
+    if (OPCUASubscriberSet.length > 0) {
+        let index = 0;
+        for (index = 0; index < OPCUASubscriberSet.length; index += 1) {
+            if (OPCUASubscriberSet[index]._session &&
+                OPCUASubscriberSet[index]._session._closed === true) {
+                OPCUASubscriberSet.splice(index, 1);
+                index -= 1;
+            }
+        }
+    }
+}
+
 function updateConfig()
 {
+    updateOPCUASubscriberSetStatus();
     ConfigAgent.configInit(ConfigAgent.ReServerConfigs, () => {
         if (ConfigAgent.ReServerConfigs.length > 0) {
             let reConfigServerMap = convertSerConfigToMap(ConfigAgent.ReServerConfigs);

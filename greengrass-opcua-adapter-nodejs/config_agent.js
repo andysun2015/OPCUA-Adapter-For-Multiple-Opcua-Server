@@ -177,18 +177,16 @@ function reportSystemStatus() {
 
 var compareWithTrustCert = function (serverCert) {
     // read file in the same folder
-    const directoryPath = path.join(__dirname, certConfig.CertPath);
-    var files = fs.readdirSync(directoryPath);
-    var result = false;
-
+    var files = fs.readdirSync(certConfig.CertPath);
     for (let file of files) {
-        let contents = fs.readFileSync(`${directoryPath}/${file}`);
+        let contents = fs.readFileSync(`${certConfig.CertPath}/${file}`);
         if (contents.length === serverCert.length) {
             if (contents.equals(serverCert)) {
                  return true;
             }
         }
     }
+    return false;
 };
 
 function checkFileLoop(callback) {

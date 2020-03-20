@@ -70,6 +70,14 @@ class OPCUASubscriber {
             }
 
             if (createSessionError) {
+                self._client.disconnect(function (err) {
+                    if (err) {
+                        console.log("OPCUAClient#withClientSession: client disconnect failed ?");
+                        console.log('Got an error disconnecting from ', self._serverConfig.url, ' Err: ', err);
+                    } else {
+                        self.emit('disconnect');
+                    }
+                });
                 console.log('Err: ', createSessionError);
             }
         });

@@ -15,7 +15,7 @@ In this section we will cover the following steps:
 Greengrass implements OPC\-UA as a Lambda function in NodeJS\. Since Lambda functions running on Greengrass cores have access to network resources, you can create Lambda functions that proxy information from your existing OPC\-UA servers over TCP to other functions or services in your Greengrass group\.
 
 Under this architecture, we provide the following additional features for customer to use:
-+ publishednodes\.json, used to configured how many OPC-UA nodes in dedicated OPC-UA server need to be monitored\.
++ published_nodes\.json, used to configured how many OPC-UA nodes in dedicated OPC-UA server need to be monitored\.
 + cert_config\.json, used to configure the path of server certificates\.
 + client_config\.json, used to configure some client options and time interval to check publishednodes.json modification\.
 + system_status.txt, used to check if the system is alive or not\.
@@ -71,6 +71,8 @@ You could setup many OPC\-UA servers concurrently.
 + Create a Greengrass group \(find more details in [Configure AWS IoT Greengrass on AWS IoT](https://docs.aws.amazon.com/greengrass/latest/developerguide/gg-config.html)\.\) 
 + Set up a Greengrass Core on one of the supported platforms \(Raspberry\-pi for [example](https://docs.aws.amazon.com/greengrass/latest/developerguide/setup-filter.rpi.html)\) 
 + [Set up](https://github.com/aws/aws-greengrass-core-sdk-js/) your Greengrass Core to be able to run nodejs12\.x Lambda functions.
++ Set up [local resource](https://docs.aws.amazon.com/greengrass/latest/developerguide/access-local-resources.html) to access the configurable json file for the additional features as described in the [Architecture section](#opcua-architecture).
+![\[Greengrass Lambda LRA.\]](./greengrass-opcua-adapter-nodejs/pics/OPCUA_Lambda_LRA.png)
 
 ## Use Greengrass OPC\-UA to Interact with your OPC\-UA Server<a name="opcua-interact"></a>
 

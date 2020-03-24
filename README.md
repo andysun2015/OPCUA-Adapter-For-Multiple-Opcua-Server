@@ -213,3 +213,7 @@ You can see messages received by your Lambda function in one of two ways:
 **Note:**
 + Make sure there is a Subscription from your Lambda function going to the IoT Cloud\. Details are in [Configure the Lambda Function for AWS IoT Greengrass](https://docs.aws.amazon.com/greengrass/latest/developerguide/config-lambda.html)\.
 + Since messages are forwarded to the cloud, make sure you terminate either the example server you configured above, or stop the Greengrass core, so that you don't end up publishing a lot of messages to IoT cloud and getting charged for them\!
+
+## License
+
+This solution is licensed under the MIT-0 License. See the LICENSE file.

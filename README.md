@@ -71,7 +71,7 @@ You could setup many OPC\-UA servers concurrently.
 + Create a Greengrass group \(find more details in [Configure AWS IoT Greengrass on AWS IoT](https://docs.aws.amazon.com/greengrass/latest/developerguide/gg-config.html)\.\) 
 + Set up a Greengrass Core on one of the supported platforms \(Raspberry\-pi for [example](https://docs.aws.amazon.com/greengrass/latest/developerguide/setup-filter.rpi.html)\) 
 + [Set up](https://github.com/aws/aws-greengrass-core-sdk-js/) your Greengrass Core to be able to run nodejs12\.x Lambda functions.
-+ Set up [local resource](https://docs.aws.amazon.com/greengrass/latest/developerguide/access-local-resources.html) to access the configurable json file for the additional features as described in the [Architecture section](#opcua-architecture).
++ Set up [local resource](https://docs.aws.amazon.com/greengrass/latest/developerguide/access-local-resources.html) to access the configurable json file, ```/etc/greengrass/opcua-adapter/config/system_status.txt```, for the additional features as described in the [Architecture section](#opcua-architecture).
 ![\[Greengrass Lambda LRA.\]](./greengrass-opcua-adapter-nodejs/pics/OPCUA_Lambda_LRA.png)
 
 ## Use Greengrass OPC\-UA to Interact with your OPC\-UA Server<a name="opcua-interact"></a>

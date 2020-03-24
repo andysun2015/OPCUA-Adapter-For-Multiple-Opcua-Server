@@ -168,9 +168,9 @@ function reportSystemStatus() {
     var seconds = dateObject.getSeconds();
     fs.writeFile(`${folder}/${systemStatus}`, seconds, function (error) {
         if (error) {
-            console.log("Failed to write system time to %s: %s", folder, error);
+            console.log("Failed to write system time to " + folder + ": " + error);
         } else {
-            console.log("System time written in %s successfully", folder);
+            console.log("System time written in " + folder + "successfully");
         }
     });
 }
